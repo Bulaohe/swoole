@@ -5,6 +5,7 @@ Add Swoole to Laravel 5.5 and Lumen 5.5
 
 # start command
 php artisan swoole:http --host=0.0.0.0 --port=9807 --pid_file=/tmp/swoole1.pid start/stop/reload/restart
+
 php artisan swoole:http --host=0.0.0.0 --port=9808 --pid_file=/tmp/swoole2.pid start/stop/reload/restart
 
 # nginx conf
