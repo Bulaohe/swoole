@@ -49,6 +49,12 @@ class HttpServerCommand extends Command
     protected $pid;
     
     /**
+     * pid file
+     * @var string
+     */
+    protected $pid_file;
+    
+    /**
      * Configures the current command.
      */
     protected function configure()
@@ -57,6 +63,7 @@ class HttpServerCommand extends Command
             ->setName('swoole:http')
             ->setDescription('Start the swoole server.')
             ->setHelp("You can use it to start the swoole http service.")
+            ->addOption('pid_file', 'pfi', InputOption::VALUE_REQUIRED, 'The http server pid file.', config('http.server.options.pid_file'))
             ->addOption('host', 'H', InputOption::VALUE_REQUIRED, 'The http server host.', config('http.server.host'))
             ->addOption('port', 'p', InputOption::VALUE_REQUIRED, 'The http server port.', config('http.server.port'));
     }
@@ -98,8 +105,10 @@ class HttpServerCommand extends Command
             'swoole_http_server process is running: ps aux|grep "swoole")');
 
         $port = $this->input->getOption('port');
+        $pid_file = $this->input->getOption('pid_file');
+        $this->pid_file = $pid_file;
         
-        $this->laravel->make('swoole.http')->run($port);
+        $this->laravel->make('swoole.http')->run($port, $pid_file);
     }
 
     /**
@@ -107,6 +116,9 @@ class HttpServerCommand extends Command
      */
     protected function stop()
     {
+        $pid_file = $this->input->getOption('pid_file');
+        $this->pid_file = $pid_file;
+        
         $pid = $this->getPid();
 
         if (! $this->isRunning($pid)) {
@@ -135,6 +147,9 @@ class HttpServerCommand extends Command
      */
     protected function restart()
     {
+        $pid_file = $this->input->getOption('pid_file');
+        $this->pid_file = $pid_file;
+        
         $pid = $this->getPid();
 
         if ($this->isRunning($pid)) {
@@ -149,6 +164,9 @@ class HttpServerCommand extends Command
      */
     protected function reload()
     {
+        $pid_file = $this->input->getOption('pid_file');
+        $this->pid_file = $pid_file;
+        
         $pid = $this->getPid();
 
         if (! $this->isRunning($pid)) {
@@ -173,6 +191,9 @@ class HttpServerCommand extends Command
      */
     public function watch()
     {
+        $pid_file = $this->input->getOption('pid_file');
+        $this->pid_file = $pid_file;
+        
         if ($this->isRunning($this->getPid())) {
             $this->stop();
         }
@@ -288,7 +309,7 @@ class HttpServerCommand extends Command
      */
     protected function getPidPath()
     {
-        return $this->laravel['config']->get('http.server.options.pid_file');
+        return $this->pid_file;
     }
 
     /**

@@ -44,6 +44,12 @@ class Manager
      * @var string
      */
     protected $basePath;
+    
+    /**
+     * pid file
+     * @var string
+     */
+    protected $pid_file;
 
     /**
      * Server events.
@@ -75,9 +81,10 @@ class Manager
     /**
      * Run swoole_http_server.
      */
-    public function run($port)
+    public function run($port, $pid_file)
     {
         $this->initialize($port);
+        $this->pid_file = $pid_file;
         
         $this->server->start();
     }
@@ -237,7 +244,7 @@ class Manager
      */
     protected function getPidFile()
     {
-        return $this->container['config']->get('http.server.options.pid_file');
+        return $this->pid_file;
     }
 
     /**
