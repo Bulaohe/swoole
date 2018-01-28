@@ -15,6 +15,7 @@ use Bulaohe\Swoole\Watcher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Event;
 use Swoole\Process;
+use Symfony\Component\Console\Input\InputOption;
 
 class HttpServerCommand extends Command
 {
@@ -46,6 +47,19 @@ class HttpServerCommand extends Command
      * @var int
      */
     protected $pid;
+    
+    /**
+     * Configures the current command.
+     */
+    protected function configure()
+    {
+        $this
+            ->setName('swoole:http')
+            ->setDescription('Start the swoole server.')
+            ->setHelp("You can use it to start the swoole http service.")
+            ->addOption('host', 'H', InputOption::VALUE_REQUIRED, 'The http server host.', config('http.server.host'))
+            ->addOption('port', 'p', InputOption::VALUE_REQUIRED, 'The http server port.', config('http.server.port'));
+    }
 
     /**
      * Execute the console command.
@@ -83,7 +97,7 @@ class HttpServerCommand extends Command
         $this->info('> (You can run this command to ensure the ' .
             'swoole_http_server process is running: ps aux|grep "swoole")');
 
-        $port = $this->option('port') ?? config('http.server.port');
+        $port = $this->input->getOption('port');
         
         $this->laravel->make('swoole.http')->run($port);
     }
