@@ -1,0 +1,23 @@
+{
+    "name": "bulaohe/swoole",
+    "description": "High performance HTTP server based on Swoole. Speeds up your Laravel and Lumen applications.",
+    "keywords": ["swoole", "laravel", "lumen", "performance", "http", "server"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Simon Quan",
+            "email": "qqmmmqq@gmail.com"
+        }
+    ],
+    "require": {
+        "illuminate/console": "5.5.*",
+        "illuminate/contracts": "5.5.*",
+        "illuminate/http": "5.5.*",
+        "illuminate/support": "5.5.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bulaohe\\Swoole\\": "src"
+        }
+    }
+}
