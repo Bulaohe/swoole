@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace HuangYi\Http;
+namespace Bulaohe\Swoole;
 
 use Bulaohe\Swoole\Server\Manager;
 
