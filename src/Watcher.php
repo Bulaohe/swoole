@@ -1,6 +1,6 @@
 <?php
 
-namespace Bulaohe\Swoole\Watcher;
+namespace Bulaohe\Swoole;
 
 use Closure;
 use Exception;
