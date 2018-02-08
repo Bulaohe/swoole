@@ -95,7 +95,7 @@ class Application
     protected function initProviders()
     {
         $app = $this->getApplication();
-        $providers = $app['config']->get('http.providers');
+        $providers = config('http.providers');
         foreach ($providers as $provider) {
             if (! $provider instanceof ServiceProvider) {
                 $provider = new $provider($app);

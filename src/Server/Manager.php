@@ -46,10 +46,22 @@ class Manager
     protected $basePath;
     
     /**
+     * port
+     * @var string
+     */
+    protected $port;
+    
+    /**
      * pid file
      * @var string
      */
     protected $pid_file;
+    
+    /**
+     * swoole host
+     * @var string
+     */
+    protected $host;
 
     /**
      * Server events.
@@ -81,10 +93,13 @@ class Manager
     /**
      * Run swoole_http_server.
      */
-    public function run($port, $pid_file)
+    public function run($port, $pid_file, $host)
     {
-        $this->initialize($port);
+        $this->port = $port;
         $this->pid_file = $pid_file;
+        $this->host = $host;
+        
+        $this->initialize();
         
         $this->server->start();
     }
@@ -108,11 +123,11 @@ class Manager
     /**
      * Initialize.
      */
-    protected function initialize($port)
+    protected function initialize()
     {
         $this->setProcessName('manager process');
 
-        $this->createSwooleHttpServer($port);
+        $this->createSwooleHttpServer();
         $this->configureSwooleHttpServer();
         $this->setSwooleHttpServerListeners();
     }
@@ -120,12 +135,9 @@ class Manager
     /**
      * Creates swoole_http_server.
      */
-    protected function createSwooleHttpServer($port)
+    protected function createSwooleHttpServer()
     {
-        $host = $this->container['config']->get('http.server.host');
-//         $port = $this->container['config']->get('http.server.port');
-
-        $this->server = new Server($host, $port);
+        $this->server = new Server($this->host, $this->port);
     }
 
     /**
@@ -133,7 +145,8 @@ class Manager
      */
     protected function configureSwooleHttpServer()
     {
-        $config = $this->container['config']->get('http.server.options');
+        $config = config('http.server.options');
+        $config['pid_file'] = $this->pid_file;
 
         $this->server->set($config);
     }

@@ -24,6 +24,8 @@ return [
             'log_file' => env('HTTP_SERVER_OPTIONS_LOG_FILE', base_path('storage/logs/http.log')),
 
             'daemonize' => env('HTTP_SERVER_OPTIONS_DAEMONIZE', 1),
+            
+            'worker_num' => env('HTTP_SERVER_OPTIONS_WORKERNUM', 4)
 
         ],
 

@@ -106,9 +106,10 @@ class HttpServerCommand extends Command
 
         $port = $this->input->getOption('port');
         $pid_file = $this->input->getOption('pid_file');
+        $host = $this->input->getOption('host');
         $this->pid_file = $pid_file;
         
-        $this->laravel->make('swoole.http')->run($port, $pid_file);
+        $this->laravel->make('swoole.http')->run($port, $pid_file, $host);
     }
 
     /**
@@ -202,7 +203,7 @@ class HttpServerCommand extends Command
             $this->removeWatchedFile();
         }
 
-        $this->laravel['config']->set('http.server.options.daemonize', 0);
+        config('http.server.options.daemonize', 0);
 
         Event::listen('http.workerStart', function () {
             if ($this->createWatchedFile()) {
@@ -341,7 +342,7 @@ class HttpServerCommand extends Command
      */
     protected function createWatcher()
     {
-        $config = $this->laravel['config']['http.watcher'];
+        $config = config('http.watcher');
         $directories = $config['directories'];
         $excludedDirectories = $config['excluded_directories'];
         $suffixes = $config['suffixes'];
