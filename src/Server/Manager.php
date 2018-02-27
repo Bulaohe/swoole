@@ -13,6 +13,7 @@ namespace Bulaohe\Swoole\Server;
 
 use Illuminate\Contracts\Container\Container;
 use Swoole\Http\Server;
+use Swoole\Table;
 
 class Manager
 {
@@ -62,6 +63,12 @@ class Manager
      * @var string
      */
     protected $host;
+    
+    /**
+     * swoole table
+     * @var object
+     */
+    protected $btable;
 
     /**
      * Server events.
@@ -87,7 +94,11 @@ class Manager
         $this->framework = $framework;
         $this->basePath = $basePath;
 
+        $this->btable = new Table(8);
+        $this->btable->column('val', Table::TYPE_INT, 2);
+        $this->btable->create();
         
+        $this->btable->set('worker_counter', ['val'=>0]);
     }
 
     /**
@@ -185,7 +196,7 @@ class Manager
     /**
      * "onWorkerStart" listener.
      */
-    public function onWorkerStart()
+    public function onWorkerStart($serv, $worker_id)
     {
         $this->clearCache();
         $this->setProcessName('worker process');
@@ -193,6 +204,16 @@ class Manager
         $this->container['events']->fire('http.workerStart', func_get_args());
 
         $this->createApplication();
+        
+        //below exec the micro service register
+        $work_num = env('HTTP_SERVER_OPTIONS_WORKERNUM', 1);
+        
+        $this->btable->incr('worker_counter', 'val');
+        if($work_num == $this->btabe->get('worker_counter')['val']){
+            $this->preProcessServiceRegister();
+            echo 'worker ' . $worker_id . ': started the register' . "\n";
+        }
+        
     }
 
     /**
@@ -223,6 +244,9 @@ class Manager
      */
     public function onShutdown()
     {
+        $this->preProcessServiceLogoff();
+        echo 'start to stop the eureka service' . "\n";
+        
         $this->removePidFile();
 
         $this->container['events']->fire('http.showdown', func_get_args());
@@ -311,5 +335,161 @@ class Manager
         $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
 
         swoole_set_process_name($name);
+    }
+    
+    /**
+     *
+     * @param array $eureka
+     */
+    public function preProcessServiceRegister()
+    {
+        echo 'start register' . "\n";
+        
+        app()->configure('eureka');
+        $register_url = config('eureka.register_url');
+        if($register_url === null){
+            return false;
+        }
+        
+        $eureka = config('eureka');
+        $url = $eureka['register_url'] . $eureka['service_name'] . '/';
+        $data = $eureka['register_data'];
+        
+        if($eureka['service_port_pre'] != ''){
+            $port = $eureka['service_port_pre'] . $this->port;
+        }else{
+            $port = $this->port;
+        }
+        
+        if($eureka['service_host'] != ''){
+            $host = $eureka['service_host'];
+        }else{
+            $host = $this->host;
+        }
+        
+        $data['instance']['instanceId'] = $eureka['service_name'] . '_' . $host . ':' . $port;
+        $data['instance']['hostName'] = $host;
+        $data['instance']['app'] = $eureka['service_name'];
+        $data['instance']['ipAddr'] = $host;
+        $data['instance']['port']['$'] = $port;
+        $data['instance']['leaseInfo']['registrationTimestamp'] = round(microtime(true) * 1000);
+        $data['instance']['leaseInfo']['lastRenewalTimestamp'] = round(microtime(true) * 1000);
+        $data['instance']['leaseInfo']['serviceUpTimestamp'] = round(microtime(true) * 1000);
+        $data['instance']['homePageUrl'] = 'http://' . $host . ':' . $port . '/';
+        $data['instance']['statusPageUrl'] = 'http://' . $host . ':' . $port . '/info';
+        $data['instance']['healthCheckUrl'] = 'http://' . $host . ':' . $port . '/health';
+        $data['instance']['vipAddress'] = $eureka['service_name'];
+        $data['instance']['secureVipAddress'] = $eureka['service_name'];
+        $data['instance']['lastUpdatedTimestamp'] = round(microtime(true) * 1000) . '';
+        $data['instance']['lastDirtyTimestamp'] = round(microtime(true) * 1000) . '';
+        
+        $res = $this->serviceRegister($url, $data);
+        echo $res;
+    }
+    
+    /**
+     * auto register micro service
+     * @param string $url
+     * @param array $data
+     * @return boolean|mixed
+     */
+    protected function serviceRegister($url = '', $data = [])
+    {
+        if($url == '' || empty($data)){
+            return false;
+        }
+        
+        $data = json_encode($data);
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+//         curl_setopt($ch, CURLOPT_HEADER, TRUE);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        
+        $res = curl_exec($ch);
+        
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        curl_close($ch);
+        
+        if($res === false){
+            return 'curl request fail http code ' . $http_code;
+        }
+        
+        if($http_code >= 400){
+            return 'curl request fail http code ' . $http_code;
+        }
+        
+        return $res;
+    }
+    
+    /**
+     * auto log off micro service
+     */
+    protected function preProcessServiceLogoff()
+    {
+        echo 'log off service' . "\n";
+        
+        app()->configure('eureka');
+        $logoff_url = config('eureka.logoff_url');
+        if($logoff_url === null){
+            return false;
+        }
+        
+        $eureka = config('eureka');
+        if($eureka['service_port_pre'] != ''){
+            $port = $eureka['service_port_pre'] . $this->port;
+        }else{
+            $port = $this->port;
+        }
+        
+        if($eureka['service_host'] != ''){
+            $host = $eureka['service_host'];
+        }else{
+            $host = $this->host;
+        }
+        $url = $eureka['logoff_url'] . $eureka['service_name'] . '/' . $eureka['service_name'] . '_' . $host . ':' . $port;
+        
+        $res = $this->serviceLogoff($url);
+        echo $res;
+    }
+    
+    protected function serviceLogoff($url = ''){
+        $ch = curl_init();
+        // Set default options.
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_FILETIME, true);
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, false);
+        
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5000);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_NOSIGNAL, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+        
+        $res = curl_exec($ch);
+        
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        curl_close($ch);
+        
+        if($res === false){
+            return 'curl log off request fail http code ' . $http_code;
+        }
+        
+        if($http_code >= 400){
+            return 'curl log off request fail http code ' . $http_code;
+        }
+        
+        return $res;
     }
 }
