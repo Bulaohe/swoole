@@ -209,7 +209,7 @@ class Manager
         $work_num = env('HTTP_SERVER_OPTIONS_WORKERNUM', 1);
         
         $this->btable->incr('worker_counter', 'val');
-        if($work_num == $this->btabe->get('worker_counter')['val']){
+        if($work_num == $this->btable->get('worker_counter')['val']){
             $this->preProcessServiceRegister();
             echo 'worker ' . $worker_id . ': started the register' . "\n";
         }
