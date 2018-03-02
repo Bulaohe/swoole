@@ -346,13 +346,12 @@ class Manager
         echo 'start register' . "\n";
         
         app()->configure('eureka');
-        $register_url = config('eureka.register_url');
-        if($register_url === null){
+        $register_host = config('eureka.register_host');
+        if($register_host === null){
             return false;
         }
         
         $eureka = config('eureka');
-        $url = $eureka['register_url'] . $eureka['service_name'] . '/';
         $data = $eureka['register_data'];
         
         if($eureka['service_port_pre'] != ''){
@@ -383,8 +382,29 @@ class Manager
         $data['instance']['lastUpdatedTimestamp'] = round(microtime(true) * 1000) . '';
         $data['instance']['lastDirtyTimestamp'] = round(microtime(true) * 1000) . '';
         
-        $res = $this->serviceRegister($url, $data);
-        echo $res;
+        $rhosts = explode(',', $register_host);
+        foreach ($rhosts as $rhost) {
+            $url = $this->getEurekaUrl($rhost, $eureka['register_port'], $eureka['register_path'], $eureka['service_name']);
+            $res = $this->serviceRegister($url, $data);
+            echo $res['res'];
+            if($res['status'] == 1){
+                break;
+            }
+        }
+    }
+    
+    /**
+     * get url
+     * 
+     * @param string $host 
+     * @param string $port
+     * @param string $path
+     * @param string $service_name
+     * @return string
+     */
+    protected function getEurekaUrl($host, $port, $path, $service_name)
+    {
+        return 'http://' . $host . ':' . $port . $path . $service_name . '/';
     }
     
     /**
@@ -406,13 +426,14 @@ class Manager
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_HEADER, 0);
-//         curl_setopt($ch, CURLOPT_HEADER, TRUE);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3000);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
         
         $res = curl_exec($ch);
         
@@ -421,14 +442,26 @@ class Manager
         curl_close($ch);
         
         if($res === false){
-            return 'curl request fail http code ' . $http_code;
+            return [
+                'res' => 'curl request fail http code ' . $http_code,
+                'code' => $http_code,
+                'status' => 0,
+            ];
         }
         
         if($http_code >= 400){
-            return 'curl request fail http code ' . $http_code;
+            return [
+                'res' => 'curl request fail http code ' . $http_code,
+                'code' => $http_code,
+                'status' => 0,
+            ];
         }
         
-        return $res;
+        return [
+            'res' => $res,
+            'code' => $http_code,
+            'status' => 1,
+        ];
     }
     
     /**
@@ -439,8 +472,8 @@ class Manager
         echo 'log off service' . "\n";
         
         app()->configure('eureka');
-        $logoff_url = config('eureka.logoff_url');
-        if($logoff_url === null){
+        $logoff_host = config('eureka.register_host');
+        if($logoff_host === null){
             return false;
         }
         
@@ -456,10 +489,16 @@ class Manager
         }else{
             $host = $this->host;
         }
-        $url = $eureka['logoff_url'] . $eureka['service_name'] . '/' . $eureka['service_name'] . '_' . $host . ':' . $port;
         
-        $res = $this->serviceLogoff($url);
-        echo $res;
+        $rhosts = explode(',', $logoff_host);
+        foreach ($rhosts as $rhost) {
+            $url = $this->getEurekaUrl($rhost, $eureka['register_port'], $eureka['register_path'], $eureka['service_name']) . $eureka['service_name'] . '_' . $host . ':' . $port;;
+            $res = $this->serviceLogoff($url);
+            echo $res['res'];
+            if($res['status'] == 1){
+                break;
+            }
+        }
     }
     
     protected function serviceLogoff($url = ''){
@@ -471,8 +510,8 @@ class Manager
         
         curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5000);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3000);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
         curl_setopt($ch, CURLOPT_NOSIGNAL, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
         
@@ -483,13 +522,28 @@ class Manager
         curl_close($ch);
         
         if($res === false){
-            return 'curl log off request fail http code ' . $http_code;
+            return [
+                'res' => 'curl request fail http code ' . $http_code,
+                'code' => $http_code,
+                'status' => 0,
+                'try' => $try + 1
+            ];
         }
         
         if($http_code >= 400){
-            return 'curl log off request fail http code ' . $http_code;
+            return [
+                'res' => 'curl request fail http code ' . $http_code,
+                'code' => $http_code,
+                'status' => 0,
+                'try' => $try + 1
+            ];
         }
         
-        return $res;
+        return [
+            'res' => $res,
+            'code' => $http_code,
+            'status' => 1,
+            'try' => $try + 1
+        ];
     }
 }
