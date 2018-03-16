@@ -526,7 +526,6 @@ class Manager
                 'res' => 'curl request fail http code ' . $http_code,
                 'code' => $http_code,
                 'status' => 0,
-                'try' => $try + 1
             ];
         }
         
@@ -535,7 +534,6 @@ class Manager
                 'res' => 'curl request fail http code ' . $http_code,
                 'code' => $http_code,
                 'status' => 0,
-                'try' => $try + 1
             ];
         }
         
@@ -543,7 +541,6 @@ class Manager
             'res' => $res,
             'code' => $http_code,
             'status' => 1,
-            'try' => $try + 1
         ];
     }
 }
