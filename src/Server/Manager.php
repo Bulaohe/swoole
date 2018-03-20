@@ -214,6 +214,12 @@ class Manager
             echo 'worker ' . $worker_id . ': started the register' . "\n";
         }
         
+        if($worker_id == 0){
+            \swoole_timer_tick(60000, function() use ($worker_id) {
+                $this->preProcessServiceRegister();
+                echo 'timer worker ' . $worker_id . ': started the register' . "\n";
+            });
+        }
     }
 
     /**
@@ -345,7 +351,6 @@ class Manager
     {
         echo 'start register' . "\n";
         
-        app()->configure('eureka');
         $register_host = config('eureka.register_host');
         if($register_host === null){
             return false;
@@ -471,7 +476,6 @@ class Manager
     {
         echo 'log off service' . "\n";
         
-        app()->configure('eureka');
         $logoff_host = config('eureka.register_host');
         if($logoff_host === null){
             return false;
