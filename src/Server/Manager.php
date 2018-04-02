@@ -209,9 +209,9 @@ class Manager
         $work_num = env('HTTP_SERVER_OPTIONS_WORKERNUM', 1);
         
         $this->btable->incr('worker_counter', 'val');
+        
         if($work_num == $this->btable->get('worker_counter')['val']){
-            $this->preProcessServiceRegister();
-            echo 'worker ' . $worker_id . ': started the register' . "\n";
+            //Todo
         }
     }
 
@@ -243,9 +243,6 @@ class Manager
      */
     public function onShutdown()
     {
-        $this->preProcessServiceLogoff();
-        echo 'start to stop the eureka service' . "\n";
-        
         $this->removePidFile();
 
         $this->container['events']->fire('http.showdown', func_get_args());
@@ -334,189 +331,5 @@ class Manager
         $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
 
         swoole_set_process_name($name);
-    }
-    
-    /**
-     *
-     * @param array $eureka
-     */
-    public function preProcessServiceRegister()
-    {
-        echo 'start register' . "\n";
-        
-        $register_host = config('eureka.register_host');
-        if($register_host === null){
-            return false;
-        }
-        
-        $eureka = config('eureka');
-        $data = $eureka['register_data'];
-        
-        if($eureka['service_port_pre'] != ''){
-            $port = $eureka['service_port_pre'] . $this->port;
-        }else{
-            $port = $this->port;
-        }
-        
-        if($eureka['service_host'] != ''){
-            $host = $eureka['service_host'];
-        }else{
-            $host = $this->host;
-        }
-        
-        $data['instance']['instanceId'] = $eureka['service_name'] . '_' . $host . ':' . $port;
-        $data['instance']['hostName'] = $host;
-        $data['instance']['app'] = $eureka['service_name'];
-        $data['instance']['ipAddr'] = $host;
-        $data['instance']['port']['$'] = $port;
-        $data['instance']['leaseInfo']['registrationTimestamp'] = round(microtime(true) * 1000);
-        $data['instance']['leaseInfo']['lastRenewalTimestamp'] = round(microtime(true) * 1000);
-        $data['instance']['leaseInfo']['serviceUpTimestamp'] = round(microtime(true) * 1000);
-        $data['instance']['homePageUrl'] = 'http://' . $host . ':' . $port . '/';
-        $data['instance']['statusPageUrl'] = 'http://' . $host . ':' . $port . '/info';
-        $data['instance']['healthCheckUrl'] = 'http://' . $host . ':' . $port . '/health';
-        $data['instance']['vipAddress'] = $eureka['service_name'];
-        $data['instance']['secureVipAddress'] = $eureka['service_name'];
-        $data['instance']['lastUpdatedTimestamp'] = round(microtime(true) * 1000) . '';
-        $data['instance']['lastDirtyTimestamp'] = round(microtime(true) * 1000) . '';
-        
-        $rhosts = explode(',', $register_host);
-        foreach ($rhosts as $rhost) {
-            $path = $this->getEurekaPath($eureka['register_path'], $eureka['service_name']);
-            $this->serviceRegister($rhost, $eureka['register_port'], $path, $data);
-        }
-    }
-    
-    /**
-     * get url
-     * 
-     * @param string $host 
-     * @param string $port
-     * @param string $path
-     * @param string $service_name
-     * @return string
-     */
-    protected function getEurekaUrl($host, $port, $path, $service_name)
-    {
-        return 'http://' . $host . ':' . $port . $path . $service_name . '/';
-    }
-    
-    /**
-     * get url path
-     * 
-     * @param string $path
-     * @param string $service_name
-     * @return stringe
-     */
-    protected function getEurekaPath($path, $service_name)
-    {
-        return $path . $service_name . '/';
-    }
-    
-    /**
-     * auto register micro service
-     * @param string $url
-     * @param array $data
-     * @return boolean|mixed
-     */
-    protected function serviceRegister($host, $port, $path, $data = [])
-    {
-        if(empty($data)){
-            return false;
-        }
-        
-        $data = json_encode($data);
-        
-        $cli = new \swoole_http_client($host, $port);
-        $cli->set(['timeout' => 2]);
-        $cli->setHeaders([
-            'Content-Type'=>'application/json',
-        ]);
-        $cli->post($path, $data, function ($cli) {
-            echo "register request statusCode: " . $cli->statusCode . "\n";
-            $cli->close();
-        });
-    }
-    
-    /**
-     * auto log off micro service
-     */
-    /**
-     * auto log off micro service
-     */
-    protected function preProcessServiceLogoff()
-    {
-        echo 'log off service' . "\n";
-        
-        $logoff_host = config('eureka.register_host');
-        if($logoff_host === null){
-            return false;
-        }
-        
-        $eureka = config('eureka');
-        if($eureka['service_port_pre'] != ''){
-            $port = $eureka['service_port_pre'] . $this->port;
-        }else{
-            $port = $this->port;
-        }
-        
-        if($eureka['service_host'] != ''){
-            $host = $eureka['service_host'];
-        }else{
-            $host = $this->host;
-        }
-        
-        $rhosts = explode(',', $logoff_host);
-        foreach ($rhosts as $rhost) {
-            $url = $this->getEurekaUrl($rhost, $eureka['register_port'], $eureka['register_path'], $eureka['service_name']) . $eureka['service_name'] . '_' . $host . ':' . $port;;
-            $res = $this->serviceLogoff($url);
-            echo $res['res'];
-            if($res['status'] == 1){
-                break;
-            }
-        }
-    }
-    
-    protected function serviceLogoff($url = ''){
-        $ch = curl_init();
-        // Set default options.
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_FILETIME, true);
-        curl_setopt($ch, CURLOPT_FRESH_CONNECT, false);
-        
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 3000);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-        curl_setopt($ch, CURLOPT_NOSIGNAL, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-        
-        $res = curl_exec($ch);
-        
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
-        curl_close($ch);
-        
-        if($res === false){
-            return [
-                'res' => 'curl request fail http code ' . $http_code,
-                'code' => $http_code,
-                'status' => 0,
-            ];
-        }
-        
-        if($http_code >= 400){
-            return [
-                'res' => 'curl request fail http code ' . $http_code,
-                'code' => $http_code,
-                'status' => 0,
-            ];
-        }
-        
-        return [
-            'res' => $res,
-            'code' => $http_code,
-            'status' => 1,
-        ];
     }
 }
