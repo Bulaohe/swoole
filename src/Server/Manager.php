@@ -95,7 +95,7 @@ class Manager
         $this->basePath = $basePath;
 
         $this->btable = new Table(8);
-        $this->btable->column('val', Table::TYPE_INT, 2);
+        $this->btable->column('val', Table::TYPE_INT, 8);
         $this->btable->create();
         
         $this->btable->set('worker_counter', ['val'=>0]);
@@ -212,13 +212,6 @@ class Manager
         if($work_num == $this->btable->get('worker_counter')['val']){
             $this->preProcessServiceRegister();
             echo 'worker ' . $worker_id . ': started the register' . "\n";
-        }
-        
-        if($worker_id == 0){
-            \swoole_timer_tick(60000, function() use ($worker_id) {
-                $this->preProcessServiceRegister();
-                echo 'timer worker ' . $worker_id . ': started the register' . "\n";
-            });
         }
     }
 
@@ -389,12 +382,8 @@ class Manager
         
         $rhosts = explode(',', $register_host);
         foreach ($rhosts as $rhost) {
-            $url = $this->getEurekaUrl($rhost, $eureka['register_port'], $eureka['register_path'], $eureka['service_name']);
-            $res = $this->serviceRegister($url, $data);
-            echo $res['res'];
-            if($res['status'] == 1){
-                break;
-            }
+            $path = $this->getEurekaPath($eureka['register_path'], $eureka['service_name']);
+            $this->serviceRegister($rhost, $eureka['register_port'], $path, $data);
         }
     }
     
@@ -413,62 +402,45 @@ class Manager
     }
     
     /**
+     * get url path
+     * 
+     * @param string $path
+     * @param string $service_name
+     * @return stringe
+     */
+    protected function getEurekaPath($path, $service_name)
+    {
+        return $path . $service_name . '/';
+    }
+    
+    /**
      * auto register micro service
      * @param string $url
      * @param array $data
      * @return boolean|mixed
      */
-    protected function serviceRegister($url = '', $data = [])
+    protected function serviceRegister($host, $port, $path, $data = [])
     {
-        if($url == '' || empty($data)){
+        if(empty($data)){
             return false;
         }
         
         $data = json_encode($data);
         
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
+        $cli = new \swoole_http_client($host, $port);
+        $cli->set(['timeout' => 2]);
+        $cli->setHeaders([
+            'Content-Type'=>'application/json',
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 3000);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-        
-        $res = curl_exec($ch);
-        
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
-        curl_close($ch);
-        
-        if($res === false){
-            return [
-                'res' => 'curl request fail http code ' . $http_code,
-                'code' => $http_code,
-                'status' => 0,
-            ];
-        }
-        
-        if($http_code >= 400){
-            return [
-                'res' => 'curl request fail http code ' . $http_code,
-                'code' => $http_code,
-                'status' => 0,
-            ];
-        }
-        
-        return [
-            'res' => $res,
-            'code' => $http_code,
-            'status' => 1,
-        ];
+        $cli->post($path, $data, function ($cli) {
+            echo "register request statusCode: " . $cli->statusCode . "\n";
+            $cli->close();
+        });
     }
     
+    /**
+     * auto log off micro service
+     */
     /**
      * auto log off micro service
      */
