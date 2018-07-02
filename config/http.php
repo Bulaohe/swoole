@@ -16,6 +16,8 @@ return [
         'host' => env('HTTP_SERVER_HOST', '0.0.0.0'),
 
         'port' => env('HTTP_SERVER_PORT', '9901'),
+        
+        'name' => env('HTTP_SERVER_NAME', 'default_server'),
 
         'options' => [
 
