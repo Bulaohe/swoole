@@ -65,6 +65,12 @@ class Manager
     protected $host;
     
     /**
+     * swoole server name
+     * @var string
+     */
+    protected $server_name = '';
+    
+    /**
      * swoole table
      * @var object
      */
@@ -104,11 +110,12 @@ class Manager
     /**
      * Run swoole_http_server.
      */
-    public function run($port, $pid_file, $host)
+    public function run($port, $pid_file, $host, $server_name)
     {
         $this->port = $port;
         $this->pid_file = $pid_file;
         $this->host = $host;
+        $this->server_name = $server_name;
         
         $this->initialize();
         
@@ -328,7 +335,9 @@ class Manager
             return;
         }
 
-        $serverName = 'swoole_http_server';
+        $sn = $this->server_name ? '-' . $this->server_name : '';
+        
+        $serverName = 'swoole_http_server' . $sn;
         $appName = $this->container['config']->get('app.name', 'Laravel');
 
         $name = sprintf('%s: %s for %s', $serverName, $process, $appName);

@@ -55,6 +55,12 @@ class HttpServerCommand extends Command
     protected $pid_file;
     
     /**
+     * server_name
+     * @var string
+     */
+    protected $server_name;
+    
+    /**
      * Configures the current command.
      */
     protected function configure()
@@ -65,7 +71,8 @@ class HttpServerCommand extends Command
             ->setHelp("You can use it to start the swoole http service.")
             ->addOption('pid_file', 'pfi', InputOption::VALUE_REQUIRED, 'The http server pid file.', config('http.server.options.pid_file'))
             ->addOption('host', 'H', InputOption::VALUE_REQUIRED, 'The http server host.', config('http.server.host'))
-            ->addOption('port', 'p', InputOption::VALUE_REQUIRED, 'The http server port.', config('http.server.port'));
+            ->addOption('port', 'p', InputOption::VALUE_REQUIRED, 'The http server port.', config('http.server.port'))
+            ->addOption('name', 'n', InputOption::VALUE_REQUIRED, 'The http server name.', config('http.server.name'));
     }
 
     /**
@@ -108,8 +115,9 @@ class HttpServerCommand extends Command
         $pid_file = $this->input->getOption('pid_file');
         $host = $this->input->getOption('host');
         $this->pid_file = $pid_file;
+        $this->server_name = $this->input->getOption('name') . '-' . $port;
         
-        $this->laravel->make('swoole.http')->run($port, $pid_file, $host);
+        $this->laravel->make('swoole.http')->run($port, $pid_file, $host, $this->server_name);
     }
 
     /**

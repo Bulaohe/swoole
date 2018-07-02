@@ -17,6 +17,8 @@ return [
 
         'port' => env('HTTP_SERVER_PORT', '9901'),
 
+        'name' => env('HTTP_SERVER_NAME', 'default_server'),
+
         'options' => [
 
             'pid_file' => env('HTTP_SERVER_OPTIONS_PID_FILE', base_path('storage/logs/http.pid')),
