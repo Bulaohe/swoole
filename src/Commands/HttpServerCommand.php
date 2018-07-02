@@ -72,7 +72,7 @@ class HttpServerCommand extends Command
             ->addOption('pid_file', 'pfi', InputOption::VALUE_REQUIRED, 'The http server pid file.', config('http.server.options.pid_file'))
             ->addOption('host', 'H', InputOption::VALUE_REQUIRED, 'The http server host.', config('http.server.host'))
             ->addOption('port', 'p', InputOption::VALUE_REQUIRED, 'The http server port.', config('http.server.port'))
-            ->addOption('name', 'n', InputOption::VALUE_REQUIRED, 'The http server name.', config('http.server.name'));
+            ->addOption('name', 'na', InputOption::VALUE_REQUIRED, 'The http server name.', config('http.server.name'));
     }
 
     /**
