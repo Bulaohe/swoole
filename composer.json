@@ -10,10 +10,10 @@
         }
     ],
     "require": {
-        "illuminate/console": "5.5.*",
-        "illuminate/contracts": "5.5.*",
-        "illuminate/http": "5.5.*",
-        "illuminate/support": "5.5.*"
+        "illuminate/console": "5.7.*",
+        "illuminate/contracts": "5.7.*",
+        "illuminate/http": "5.7.*",
+        "illuminate/support": "5.7.*"
     },
     "autoload": {
         "psr-4": {
