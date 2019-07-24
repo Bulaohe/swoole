@@ -1,5 +1,5 @@
 # swoole
-Add Swoole to Laravel 5.7 and Lumen 5.7
+Add Swoole to Laravel 5.8 and Lumen 5.8
 
 # This pacakge is a rewrite of huang-yi/laravel-swoole-http, Thanks to Huang Yi <coodeer@163.com>.
 
