@@ -14,6 +14,7 @@ namespace Bulaohe\Swoole\Server;
 use Illuminate\Contracts\Container\Container;
 use Swoole\Http\Server;
 use Swoole\Table;
+use Illuminate\Support\Facades\Facade;
 
 class Manager
 {
@@ -230,6 +231,8 @@ class Manager
      */
     public function onRequest($swooleRequest, $swooleResponse)
     {
+        //Reset facade static request
+        Facade::clearResolvedInstance('request');
         // Reset user-customized providers
         $this->getApplication()->resetProviders();
 
