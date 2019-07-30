@@ -1,9 +1,9 @@
 # swoole
-Add Swoole to Laravel 5.8 and Lumen 5.8
+Integrate Swoole into Laravel and Lumen 5.5,5.7,5.8
 
 # This pacakge is a rewrite of huang-yi/laravel-swoole-http, Thanks to Huang Yi <coodeer@163.com>.
 
-#Notice
+# Notice
 You should reset the　instances of Singleton mode Facades Classes in the method register of your self-defined ServiceProvider like below:
 1. add clear code in the register function
 Facade::clearResolvedInstance('your-service-alias-name');
