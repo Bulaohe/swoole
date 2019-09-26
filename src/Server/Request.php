@@ -27,7 +27,7 @@ class Request
      * Make a request.
      *
      * @param \Swoole\Http\Request $swooleRequest
-     * @return \HuangYi\Http\Server\Request
+     * @return \Bulaohe\Swoole\Server\Request
      */
     public static function make(SwooleRequest $swooleRequest)
     {

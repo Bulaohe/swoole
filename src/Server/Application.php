@@ -56,7 +56,7 @@ class Application
      *
      * @param string $framework
      * @param string $basePath
-     * @return \HuangYi\Http\Server\Application
+     * @return \Bulaohe\Swoole\\Http\Server\Application
      */
     public static function make($framework, $basePath = null)
     {

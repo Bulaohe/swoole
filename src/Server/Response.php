@@ -34,7 +34,7 @@ class Response
      *
      * @param $illuminateResponse
      * @param \Swoole\Http\Response $swooleResponse
-     * @return \HuangYi\Http\Server\Response
+     * @return \Bulaohe\Swoole\Server\Response
      */
     public static function make($illuminateResponse, SwooleResponse $swooleResponse)
     {
@@ -119,7 +119,7 @@ class Response
 
     /**
      * @param \Swoole\Http\Response $swooleResponse
-     * @return \HuangYi\Http\Server\Response
+     * @return \Bualohe\Swoole\Swoole\Response
      */
     protected function setSwooleResponse(SwooleResponse $swooleResponse)
     {
@@ -138,7 +138,7 @@ class Response
 
     /**
      * @param mixed illuminateResponse
-     * @return \HuangYi\Http\Server\Response
+     * @return \Bulaohe\Swoole\Server\Response
      */
     protected function setIlluminateResponse($illuminateResponse)
     {

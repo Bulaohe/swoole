@@ -33,7 +33,7 @@ class Manager
     protected $container;
 
     /**
-     * @var \HuangYi\Http\Server\Application
+     * @var \Bulaohe\Swoole\Server\Application
      */
     protected $application;
 
@@ -100,12 +100,6 @@ class Manager
         $this->container = $container;
         $this->framework = $framework;
         $this->basePath = $basePath;
-
-        $this->btable = new Table(8);
-        $this->btable->column('val', Table::TYPE_INT, 8);
-        $this->btable->create();
-        
-        $this->btable->set('worker_counter', ['val'=>0]);
     }
 
     /**
@@ -184,7 +178,7 @@ class Manager
                 $this->server->on($event, function () use ($event) {
                     $event = sprintf('http.%s', $event);
 
-                    $this->container['events']->fire($event, func_get_args());
+                    $this->container['events']->dispatch($event, func_get_args());
                 });
             }
         }
@@ -198,7 +192,7 @@ class Manager
         $this->setProcessName('master process');
         $this->createPidFile();
 
-        $this->container['events']->fire('http.start', func_get_args());
+        $this->container['events']->dispatch('http.start', func_get_args());
     }
 
     /**
@@ -209,18 +203,9 @@ class Manager
         $this->clearCache();
         $this->setProcessName('worker process');
 
-        $this->container['events']->fire('http.workerStart', func_get_args());
+        $this->container['events']->dispatch('http.workerStart', func_get_args());
 
         $this->createApplication();
-        
-        //below exec the micro service register
-        $work_num = env('HTTP_SERVER_OPTIONS_WORKERNUM', 1);
-        
-        $this->btable->incr('worker_counter', 'val');
-        
-        if($work_num == $this->btable->get('worker_counter')['val']){
-            //Todo
-        }
     }
 
     /**
@@ -255,7 +240,7 @@ class Manager
     {
         $this->removePidFile();
 
-        $this->container['events']->fire('http.showdown', func_get_args());
+        $this->container['events']->dispatch('http.showdown', func_get_args());
     }
 
     /**
@@ -269,7 +254,7 @@ class Manager
     /**
      * Get application.
      *
-     * @return \HuangYi\Http\Server\Application
+     * @return \Bulaohe\Swoole\Server\Application
      */
     protected function getApplication()
     {

@@ -346,7 +346,7 @@ class HttpServerCommand extends Command
     /**
      * Create watcher.
      *
-     * @return \HuangYi\Watcher\Watcher
+     * @return \Bulaohe\Swoole\Watcher
      */
     protected function createWatcher()
     {
