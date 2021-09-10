@@ -221,7 +221,11 @@ class Manager
         // Reset user-customized providers
         $this->getApplication()->resetProviders();
 
-        $illuminateRequest = Request::make($swooleRequest)->toIlluminate();
+        if ($this->framework == 'laravel') {
+            $illuminateRequest = Request::make($swooleRequest)->toIlluminate();
+        } else {
+            $illuminateRequest = LumenRequest::make($swooleRequest)->toIlluminate();
+        }
         $illuminateResponse = $this->getApplication()->run($illuminateRequest);
 
         Response::make($illuminateResponse, $swooleResponse)->send();
